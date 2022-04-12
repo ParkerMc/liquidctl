@@ -110,7 +110,17 @@ class CommanderCore(UsbHidDriver):
         raise NotSupportedByDriver
 
     def set_speed_profile(self, channel, profile, **kwargs):
-        raise NotSupportedByDriver
+        channels = CommanderCore._parse_channels(channel)
+
+        with self._wake_device_context():
+            # Set hardware speed mode
+            res = self._read_data(_MODE_HW_SPEED_MODE, _DATA_TYPE_HW_SPEED_MODE)
+            device_count = res[0]
+
+            data = bytearray(res[0:device_count + 1])
+            for chan in channels:
+                data[chan + 1] = 0x02  # Set the device's hardware mode to fixed percent
+            self._write_data(_MODE_HW_SPEED_MODE, _DATA_TYPE_HW_SPEED_MODE, data)
 
     def set_fixed_speed(self, channel, duty, **kwargs):
         channels = CommanderCore._parse_channels(channel)
